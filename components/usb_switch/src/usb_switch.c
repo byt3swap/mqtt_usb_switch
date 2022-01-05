@@ -26,7 +26,6 @@
 #include "usb_switch.h"
 
 static const char       *TAG = "USB_SWITCH";
-
 SemaphoreHandle_t       sg_usb_switch_access_lock;
 
 /**

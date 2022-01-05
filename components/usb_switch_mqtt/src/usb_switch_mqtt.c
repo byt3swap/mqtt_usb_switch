@@ -1,3 +1,11 @@
+/**
+ * @file usb_switch_mqtt.c
+ * 
+ * sets up basic mqtt session with a single callback
+ * 
+ * @author byt3swap
+ */
+
 #include <sdkconfig.h>
 
 #include <string.h>
@@ -20,10 +28,16 @@ static bool                                 sg_connected = false;
 
 static SemaphoreHandle_t                    sg_connected_lock;
 
-static esp_err_t usb_switch_mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
+/**
+ * @brief main mqtt event handler
+ * 
+ * @param[in] event mqtt event
+ */
+static esp_err_t usb_switch_mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
 {
-    esp_err_t       err = ESP_OK;
-    char            *payload_ptr;
+    esp_err_t                   err = ESP_OK;
+    esp_mqtt_event_handle_t     event = (esp_mqtt_event_handle_t) event_data;
+    char                        *payload_ptr;
 
     switch(event->event_id)
     {
@@ -34,7 +48,7 @@ static esp_err_t usb_switch_mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
 
             // publish the 'online' message
             if (esp_mqtt_client_publish(sg_client, CONFIG_MQTT_BASE_TOPIC "/" CONFIG_MQTT_AVAILABLE_TOPIC_SUFFX,
-                                                                CONFIG_MQTT_AVAILABLE_TOPIC_SUFFX, 0, 1, 1) < 0)
+                                                                CONFIG_MQTT_AVAILABLE_ONLINE_PAYLOAD, 0, 1, 1) < 0)
             {
                 ESP_LOGE(TAG, "publish online status fail!");
                 err = ESP_FAIL;
@@ -66,8 +80,10 @@ static esp_err_t usb_switch_mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
             payload_ptr = (char *) calloc(event->data_len + 1, sizeof(char));
             memcpy((void *) payload_ptr, (void *) event->data, event->data_len);
 
+            // convert and send through the callback
             err = (sg_payload_cb) (usb_switch_name_to_output(payload_ptr));
 
+            // blow it way
             free(payload_ptr);
 
             break;
@@ -78,11 +94,11 @@ static esp_err_t usb_switch_mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
     return err;
 }
 
-static void usb_switch_mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data) {
-    ESP_LOGD(TAG, "Event dispatched from event loop base=%s, event_id=%d", base, event_id);
-    usb_switch_mqtt_event_handler_cb(event_data);
-}
-
+/**
+ * @brief get a default config based on the Menuconfig settings
+ * 
+ * @return your default client config
+ */
 static esp_mqtt_client_config_t usb_switch_mqtt_get_default_config(void)
 {
     esp_mqtt_client_config_t client_cfg = {
@@ -100,6 +116,8 @@ static esp_mqtt_client_config_t usb_switch_mqtt_get_default_config(void)
 
 /**
  * @brief set the connection flag
+ * 
+ * @param[in] connected the state of the connection
  */
 void usb_switch_mqtt_set_connected_status(bool connected)
 {
@@ -110,6 +128,8 @@ void usb_switch_mqtt_set_connected_status(bool connected)
 
 /**
  * @brief get the current connection flag status
+ * 
+ * @return current connected status
  */
 bool usb_switch_mqtt_is_connected(void)
 {
@@ -152,6 +172,13 @@ esp_err_t usb_switch_mqtt_pub_state(usb_switch_output_t current_output)
     return err;
 }
 
+/**
+ * @brief initialize and connect to mqtt
+ * 
+ * @param[in] paylaod_cb callback to set the output received in the paylaod
+ * 
+ * @return ESP_OK if successful, error if not
+ */
 esp_err_t usb_switch_mqtt_init(usb_switch_mqtt_payload_cb_t payload_cb)
 {
     esp_err_t                   err = ESP_OK;
