@@ -19,28 +19,10 @@
 #include <esp_log.h>
 #include <driver/gpio.h>
 #include <driver/adc.h>
-#include <esp_adc_cal.h>
 
 #include "usb_switch.h"
 
-// #define USB_SWITCH_ADC_VREF             1100                // standard default VREF for ADC
-#define USB_SWITCH_N_SAMPLES            128                 // just get a bunch of samples
-
-#define USB_SWITCH_ADC_ATTEN            ADC_ATTEN_DB_11     // we need full resolution
-#define USB_SWITCH_ADC_UNIT             ADC_UNIT_1          // using ADC 1
-#define USB_SWITCH_ADC_WIDTH            ADC_WIDTH_BIT_12
-
-#define USB_SWITCH_BUTTON_GPIO_PIN      13
-#define USB_SWITCH_OUTPUT_A_CHANNEL     ADC_CHANNEL_6       // channel for getting output A driver voltage | GPIO34 
-#define USB_SWITCH_OUTPUT_B_CHANNEL     ADC_CHANNEL_7       // channel for getting output B driver voltage | GPIO35
-
-#define USB_SWITCH_OUTPUT_A_NAME        CONFIG_USB_SWITCH_OUTPUT_A_NAME
-#define USB_SWITCH_OUTPUT_B_NAME        CONFIG_USB_SWITCH_OUTPUT_B_NAME
-
-static const char                       *TAG = "USB_SWITCH";
-
-static esp_adc_cal_characteristics_t    *sgp_adc_chars;
-
+static const char       *TAG = "USB_SWITCH";
 
 /**
  * @brief get the name of the output
@@ -94,6 +76,8 @@ usb_switch_output_t usb_switch_get_active_output(void)
  * @brief toggle the output
  * 
  * simulated pressing the button on the switch
+ * 
+ * @return ESP_OK on success, error on failure
  */
 esp_err_t usb_switch_change_toggle_output(void)
 {

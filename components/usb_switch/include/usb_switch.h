@@ -15,6 +15,19 @@
 
 #include <esp_err.h>
 
+#define USB_SWITCH_N_SAMPLES            128                 // just get a bunch of samples
+
+#define USB_SWITCH_ADC_ATTEN            ADC_ATTEN_DB_11     // we need full resolution
+#define USB_SWITCH_ADC_UNIT             ADC_UNIT_1          // using ADC 1
+#define USB_SWITCH_ADC_WIDTH            ADC_WIDTH_BIT_12
+
+#define USB_SWITCH_BUTTON_GPIO_PIN      13
+#define USB_SWITCH_OUTPUT_A_CHANNEL     ADC_CHANNEL_6       // channel for getting output A driver voltage | GPIO34 
+#define USB_SWITCH_OUTPUT_B_CHANNEL     ADC_CHANNEL_7       // channel for getting output B driver voltage | GPIO35
+
+#define USB_SWITCH_OUTPUT_A_NAME        CONFIG_USB_SWITCH_OUTPUT_A_NAME
+#define USB_SWITCH_OUTPUT_B_NAME        CONFIG_USB_SWITCH_OUTPUT_B_NAME
+
 typedef enum {
     USB_SWITCH_OUTPUT_A,
     USB_SWITCH_OUTPUT_B,
