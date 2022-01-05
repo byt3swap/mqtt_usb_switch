@@ -17,6 +17,8 @@
 #include <driver/adc.h>
 #include <esp_adc_cal.h>
 
+#include "usb_switch.h"
+
 static const char *TAG = "HA_USB_SWITCH";
 
 #define DEFAULT_VREF                    1100
@@ -143,45 +145,45 @@ static void wifi_init(void)
     }
 }
 
-static void switch_output(void)
-{
+// static void switch_output(void)
+// {
 
-    gpio_set_level(13, 0);
-    vTaskDelay(50 / portTICK_PERIOD_MS);
-    gpio_set_level(13, 1);
-}
+//     gpio_set_level(13, 0);
+//     vTaskDelay(50 / portTICK_PERIOD_MS);
+//     gpio_set_level(13, 1);
+// }
 
-static int get_active_output(void)
-{
-    uint32_t    a_reading = 0;
-    uint32_t    b_reading = 0;
-    uint32_t    a_voltage, b_voltage = 0;
+// static int get_active_output(void)
+// {
+//     uint32_t    a_reading = 0;
+//     uint32_t    b_reading = 0;
+//     uint32_t    a_voltage, b_voltage = 0;
 
-    for (int i = 0; i < N_SAMPLES; i++)
-    {
-        a_reading += adc1_get_raw((adc1_channel_t) sg_channel_input_a);
-        b_reading += adc1_get_raw((adc1_channel_t) sg_channel_input_b); 
+//     for (int i = 0; i < N_SAMPLES; i++)
+//     {
+//         a_reading += adc1_get_raw((adc1_channel_t) sg_channel_input_a);
+//         b_reading += adc1_get_raw((adc1_channel_t) sg_channel_input_b); 
 
-    }
+//     }
 
-    a_reading /= N_SAMPLES;
-    b_reading /= N_SAMPLES;
+//     a_reading /= N_SAMPLES;
+//     b_reading /= N_SAMPLES;
 
-    a_voltage = esp_adc_cal_raw_to_voltage(a_reading, sg_adc_chars);
-    b_voltage = esp_adc_cal_raw_to_voltage(b_reading, sg_adc_chars);
+//     a_voltage = esp_adc_cal_raw_to_voltage(a_reading, sg_adc_chars);
+//     b_voltage = esp_adc_cal_raw_to_voltage(b_reading, sg_adc_chars);
 
-    // ESP_LOGI(TAG, "Input A = %d", a_voltage);
-    // ESP_LOGI(TAG, "Input B = %d", b_voltage);
+//     ESP_LOGI(TAG, "Input A = %d | %d", a_voltage, a_reading);
+//     ESP_LOGI(TAG, "Input B = %d | %d", b_voltage, b_reading);
 
-    if (a_voltage < b_voltage)
-    {
-        return OUTPUT_B;
-    }
-    else
-    {
-        return OUTPUT_A;
-    }
-}
+//     if (a_voltage < b_voltage)
+//     {
+//         return OUTPUT_B;
+//     }
+//     else
+//     {
+//         return OUTPUT_A;
+//     }
+// }
 
 static esp_err_t mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
 {
@@ -202,7 +204,7 @@ static esp_err_t mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
                                                                     CONFIG_MQTT_AVAILABLE_ONLINE_PAYLOAD, 0, 1, 1);
             ESP_LOGI(TAG, "set status to online successful, msg_id=%d", msg_id);
 
-            active_output = get_active_output();
+            active_output = usb_switch_get_active_output();
             if (active_output == OUTPUT_B)
             {
                 payload_out = OUTPUT_B_NAME;
@@ -273,16 +275,16 @@ static esp_err_t mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
 
             if (active_output != OUTPUT_INVALID)
             {
-                if (active_output != get_active_output())
+                if (active_output != usb_switch_get_active_output())
                 {
         
                     xSemaphoreTake(sg_output_lock, portMAX_DELAY);
-                    switch_output();
+                    usb_switch_change_toggle_output();
 
                     vTaskDelay(20 / portTICK_PERIOD_MS);
                     sg_curr_output = active_output;
 
-                    active_output = get_active_output();
+                    active_output = usb_switch_get_active_output();
 
                     xSemaphoreGive(sg_output_lock);
 
@@ -407,15 +409,16 @@ void app_main(void)
     gpio_set_direction(15, GPIO_MODE_OUTPUT);
     gpio_set_level(15, 0);
 
-    // setup pin, set to high initially so the physical button will work
-    gpio_reset_pin(SWITCH_BUTTON_GPIO);
-    gpio_set_direction(SWITCH_BUTTON_GPIO, GPIO_MODE_INPUT_OUTPUT);
-    gpio_set_level(SWITCH_BUTTON_GPIO, 1);
+    // // setup pin, set to high initially so the physical button will work
+    // gpio_reset_pin(SWITCH_BUTTON_GPIO);
+    // gpio_set_direction(SWITCH_BUTTON_GPIO, GPIO_MODE_INPUT_OUTPUT);
+    // gpio_set_level(SWITCH_BUTTON_GPIO, 1);
 
     sg_output_lock = xSemaphoreCreateMutex();
 
-    // set up adc
-    adc_init();
+    // // set up adc
+    // adc_init();
+    usb_switch_init();
 
     wifi_init();    // initialize wifi using configured credentials
 
@@ -423,13 +426,13 @@ void app_main(void)
 
     char *output_name = NULL;
 
-    sg_curr_output = get_active_output();
+    sg_curr_output = usb_switch_get_active_output();
 
     int msg_id, temp_output;
 
     while(1)
     {
-        active_output = get_active_output();
+        active_output = usb_switch_get_active_output();
         switch(active_output)
         {
             case OUTPUT_A:

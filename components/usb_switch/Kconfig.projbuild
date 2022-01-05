@@ -1,0 +1,13 @@
+menu "USB Switch General Config"
+    config USB_SWITCH_OUTPUT_A_NAME
+        string "Output A Name"
+        default "Desktop"
+        help
+            Name of the device connected to host port A on the switch, used as status payload on change to A
+
+    config USB_SWITCH_OUTPUT_B_NAME
+        string "Output B Name"
+        default "Laptop"
+        help
+            Name of the device connected to host port B on the switch, used as status payload on change to B
+endmenu
