@@ -22,6 +22,8 @@
 #include "usb_switch_mqtt.h"
 #include "usb_switch_wifi.h"
 
+#define PUB_RETRY_MAX        60
+
 static const char *TAG = "MAIN";
 
 /**
@@ -43,6 +45,8 @@ static esp_err_t output_set_callback(usb_switch_output_t output)
 
 void app_main(void)
 {
+    int retries = 0;
+
     usb_switch_output_t last_active, curr_active;
 
     ESP_LOGI(TAG, "switch start!");
@@ -70,7 +74,29 @@ void app_main(void)
         curr_active = usb_switch_get_active_output();
         if (curr_active != last_active)
         {
-            usb_switch_mqtt_pub_state(curr_active);
+            if (usb_switch_mqtt_is_connected())
+            {
+                usb_switch_mqtt_pub_state(curr_active);
+            }
+            else
+            {
+                while (!usb_switch_mqtt_is_connected())
+                {
+
+                    if (retries > PUB_RETRY_MAX)
+                    {
+                        esp_restart();
+                    }
+
+                    retries++;
+
+                    vTaskDelay(1000 / portTICK_PERIOD_MS);
+                }
+
+                retries = 0;
+
+                usb_switch_mqtt_pub_state(curr_active);
+            }
         }
 
         last_active = curr_active;

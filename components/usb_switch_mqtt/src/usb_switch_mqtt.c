@@ -191,13 +191,11 @@ esp_err_t usb_switch_mqtt_init(usb_switch_mqtt_payload_cb_t payload_cb)
     err = esp_mqtt_client_start(sg_client);
     if (err == ESP_OK)
     {
-        ESP_LOGI(TAG, "MQTT START OK!");
         // register the callback
         sg_payload_cb = payload_cb;
 
         // create the lock
         sg_connected_lock = xSemaphoreCreateMutex();
-        ESP_LOGI(TAG, "LOCK CREATED");
     }
     else
     {
