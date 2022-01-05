@@ -1,0 +1,50 @@
+menu "USB Switch MQTT Config"
+    config MQTT_HOST
+        string "MQTT Host"
+        default "192.168.1.18"
+        help
+            URL / IP of broker
+
+    config MQTT_PORT
+        int "MQTT Port"
+        default 8883
+        help
+            port for MQTT connection
+
+    config MQTT_USERNAME
+        string "MQTT Username"
+        default "mqtt"
+        help
+            username for mqtt authentication (keys not currently supported)
+
+    config MQTT_PASSWORD
+        string "MQTT Password"
+        default "pa$$word"
+        help
+            password for mqtt authentication (keys not currently supported)
+
+    config MQTT_BASE_TOPIC
+        string "DDC Dongle Base MQTT Topic"
+        default "home-assistant/monitors/monitor1"
+        help
+            base MQTT topic for the device
+
+    config MQTT_AVAILABLE_TOPIC_SUFFX
+        string "DDC Dongle Availability Topic Suffix"
+        default "available"
+        help
+            suffix for availability topic
+
+    config MQTT_AVAILABLE_ONLINE_PAYLOAD
+        string "MQTT Online Payload"
+        default "online"
+        help
+            message to post to availability topic when online
+        
+    config MQTT_AVAILABLE_OFFLINE_PAYLOAD
+        string "MQTT Offline Payload"
+        default "offline"
+        help
+            message to post to availability topic when offline
+
+endmenu

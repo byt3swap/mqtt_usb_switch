@@ -35,8 +35,9 @@ typedef enum {
 } usb_switch_output_t;
 
 char *usb_switch_get_output_name(usb_switch_output_t output);
+usb_switch_output_t usb_switch_name_to_output(const char *name);
 usb_switch_output_t usb_switch_get_active_output(void);
-esp_err_t usb_switch_change_toggle_output(void);
+esp_err_t usb_switch_toggle_output(void);
 esp_err_t usb_switch_init(void);
 
 #endif // USB_SWITCH_H_

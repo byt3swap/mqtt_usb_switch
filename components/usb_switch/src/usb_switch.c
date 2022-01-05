@@ -12,8 +12,11 @@
 
 #include <sdkconfig.h>
 
+#include <string.h>
+
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include <freertos/semphr.h>
 
 #include <esp_err.h>
 #include <esp_log.h>
@@ -23,6 +26,8 @@
 #include "usb_switch.h"
 
 static const char       *TAG = "USB_SWITCH";
+
+SemaphoreHandle_t       sg_usb_switch_access_lock;
 
 /**
  * @brief get the name of the output
@@ -45,6 +50,25 @@ char *usb_switch_get_output_name(usb_switch_output_t output)
 }
 
 /**
+ * @brief convert a string output name to a usb_switch_output_t
+ * 
+ * @return usb_switch_output_t representation of the output
+ */
+usb_switch_output_t usb_switch_name_to_output(const char *name)
+{
+    if (strcmp(name, USB_SWITCH_OUTPUT_A_NAME) == 0)
+    {
+        return USB_SWITCH_OUTPUT_A;
+    }
+    else if (strcmp(name, USB_SWITCH_OUTPUT_B_NAME) == 0)
+    {
+        return USB_SWITCH_OUTPUT_B;
+    }
+
+    return USB_SWITCH_OUTPUT_INVALID;
+}
+
+/**
  * @brief get the current output
  * 
  * Due to the way the LEDs are driven, the status output pins
@@ -60,6 +84,8 @@ usb_switch_output_t usb_switch_get_active_output(void)
     uint32_t        a_raw = 0;
     uint32_t        b_raw = 0;
 
+    xSemaphoreTake(sg_usb_switch_access_lock, portMAX_DELAY);
+
     for (int i = 0; i < USB_SWITCH_N_SAMPLES; i++)
     {
         a_raw += adc1_get_raw((adc1_channel_t) USB_SWITCH_OUTPUT_A_CHANNEL);
@@ -68,6 +94,8 @@ usb_switch_output_t usb_switch_get_active_output(void)
 
     a_raw /= USB_SWITCH_N_SAMPLES;
     b_raw /= USB_SWITCH_N_SAMPLES;
+
+    xSemaphoreGive(sg_usb_switch_access_lock);
 
     return (a_raw > b_raw ? USB_SWITCH_OUTPUT_A : USB_SWITCH_OUTPUT_B);
 }
@@ -79,9 +107,11 @@ usb_switch_output_t usb_switch_get_active_output(void)
  * 
  * @return ESP_OK on success, error on failure
  */
-esp_err_t usb_switch_change_toggle_output(void)
+esp_err_t usb_switch_toggle_output(void)
 {
     esp_err_t   err;
+
+    xSemaphoreTake(sg_usb_switch_access_lock, portMAX_DELAY);
 
     err = gpio_set_level(USB_SWITCH_BUTTON_GPIO_PIN, 0);
     if (err == ESP_OK)
@@ -95,6 +125,8 @@ esp_err_t usb_switch_change_toggle_output(void)
     {
         ESP_LOGE(TAG, "failed to toggle output! - %d", err);
     }
+
+    xSemaphoreGive(sg_usb_switch_access_lock);
 
     return err;
 }
@@ -154,6 +186,9 @@ esp_err_t usb_switch_init(void)
         ESP_LOGE(TAG, "attenuation configuration for output B fail! - %d", err);
         return err;
     }
+
+    // create access lock
+    sg_usb_switch_access_lock = xSemaphoreCreateMutex();
 
     return err;
 }
