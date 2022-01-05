@@ -1,3 +1,11 @@
+/**
+ * @file main.c
+ * 
+ * @brief a simple wifi addon to make your usb switch smart
+ * 
+ * @author byt3swap
+ */
+
 #include <sdkconfig.h>
 
 #include <freertos/FreeRTOS.h>
