@@ -3,6 +3,6 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := esp32_hdmi_ddc_dongle
+PROJECT_NAME := esp32_mqtt_usb_switch
 
 include $(IDF_PATH)/make/project.mk
