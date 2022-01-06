@@ -35,8 +35,11 @@ static esp_err_t output_set_callback(usb_switch_output_t output)
 {
     esp_err_t err = ESP_OK;
 
+    ESP_LOGE(TAG, "Got output = %d", output);
+
     if (output != usb_switch_get_active_output())
     {
+        ESP_LOGE(TAG, "toggling output");
         err = usb_switch_toggle_output();
     }
 
@@ -56,11 +59,6 @@ void app_main(void)
 
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     ESP_LOGI(TAG, "Default Event Loop Creation OK!");
-
-    // turn on status led
-    gpio_reset_pin(15);
-    gpio_set_direction(15, GPIO_MODE_OUTPUT);
-    gpio_set_level(15, 0);
 
     // set up the important stuff
     usb_switch_init();

@@ -24,13 +24,13 @@ menu "USB Switch MQTT Config"
             password for mqtt authentication (keys not currently supported)
 
     config MQTT_BASE_TOPIC
-        string "DDC Dongle Base MQTT Topic"
+        string "USB Switch Base MQTT Topic"
         default "home-assistant/monitors/monitor1"
         help
             base MQTT topic for the device
 
     config MQTT_AVAILABLE_TOPIC_SUFFX
-        string "DDC Dongle Availability Topic Suffix"
+        string "USB Switch Availability Topic Suffix"
         default "available"
         help
             suffix for availability topic
