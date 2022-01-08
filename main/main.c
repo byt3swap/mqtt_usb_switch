@@ -22,7 +22,7 @@
 #include "usb_switch_mqtt.h"
 #include "usb_switch_wifi.h"
 
-#define PUB_RETRY_MAX        60
+#define PUB_RETRY_MAX        10
 
 static const char *TAG = "MAIN";
 
@@ -74,12 +74,15 @@ void app_main(void)
         {
             if (usb_switch_mqtt_is_connected())
             {
+                ESP_LOGI(TAG, "setting state to %d", curr_active);
                 usb_switch_mqtt_pub_state(curr_active);
             }
             else
             {
                 while (!usb_switch_mqtt_is_connected())
                 {
+
+                    ESP_LOGE(TAG, "MQTT NOT CONNECTED, retrying...");
 
                     if (retries > PUB_RETRY_MAX)
                     {
@@ -88,7 +91,7 @@ void app_main(void)
 
                     retries++;
 
-                    vTaskDelay(1000 / portTICK_PERIOD_MS);
+                    vTaskDelay(100 / portTICK_PERIOD_MS);
                 }
 
                 retries = 0;
